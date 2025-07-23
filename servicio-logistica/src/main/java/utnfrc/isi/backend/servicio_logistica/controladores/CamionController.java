@@ -1,10 +1,7 @@
 package utnfrc.isi.backend.servicio_logistica.controladores;
 
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 import utnfrc.isi.backend.servicio_logistica.modelos.Camion;
 import utnfrc.isi.backend.servicio_logistica.servicios.CamionService;
 
@@ -24,5 +21,14 @@ public class CamionController {
     @GetMapping("/disponible")
     public Camion obtenerCamionDisponible(@RequestParam Double peso, @RequestParam Double volumen) {
         return camionService.encontrarCamionDisponible(peso, volumen);
+    }
+    @PostMapping
+    public Camion crearCamion(@RequestBody Camion camion) {
+        return camionService.crearCamion(camion);
+    }
+
+    @PutMapping("/{id}")
+    public Camion actualizarCamion(@PathVariable Long id, @RequestBody Camion camion) {
+        return camionService.actualizarCamion(id, camion);
     }
 }

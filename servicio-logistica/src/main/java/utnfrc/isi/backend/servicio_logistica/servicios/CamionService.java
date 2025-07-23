@@ -25,4 +25,12 @@ public class CamionService {
         }
         return camionesDisponibles.get(0);
     }
+    public Camion crearCamion(Camion camion) {
+        return camionRepository.save(camion);
+    }
+
+    public Camion actualizarCamion(Long id, Camion camion) {
+        camion.setId(id);
+        return camionRepository.save(camion);
+    }
 }

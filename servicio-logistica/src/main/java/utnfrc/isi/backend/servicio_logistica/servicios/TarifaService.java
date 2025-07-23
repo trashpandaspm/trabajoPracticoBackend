@@ -14,4 +14,13 @@ public class TarifaService {
         return tarifaRepository.findAll().stream().findFirst()
                 .orElseThrow(()-> new RuntimeException("No se encontraron tarifas configuradas."));
     }
+
+    public Tarifa crearTarifa(Tarifa tarifa) {
+        return tarifaRepository.save(tarifa);
+    }
+
+    public Tarifa actualizarTarifa(Long id, Tarifa tarifa) {
+        tarifa.setId(id);
+        return tarifaRepository.save(tarifa);
+    }
 }

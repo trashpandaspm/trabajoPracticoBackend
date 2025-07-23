@@ -1,5 +1,6 @@
 package utnfrc.isi.backend.servicio_logistica.modelos;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.Entity;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.*;
@@ -30,5 +31,6 @@ public class Ciudad {
     private Double longitud;
 
     @OneToMany(mappedBy = "ciudad", cascade = CascadeType.ALL, orphanRemoval = true)
+    @JsonIgnore
     private List<Deposito> depositos;
 }

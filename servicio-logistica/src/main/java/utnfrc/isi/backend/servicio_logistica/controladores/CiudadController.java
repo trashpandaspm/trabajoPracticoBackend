@@ -1,10 +1,7 @@
 package utnfrc.isi.backend.servicio_logistica.controladores;
 
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 import utnfrc.isi.backend.servicio_logistica.modelos.Ciudad;
 import utnfrc.isi.backend.servicio_logistica.servicios.CiudadService;
 
@@ -24,5 +21,16 @@ public class CiudadController {
     @GetMapping("/{id}")
     public Ciudad obtenerPorId(@PathVariable Long id) {
         return ciudadService.obtenerPorId(id);
+    }
+
+
+    @PostMapping
+    public Ciudad crearCiudad(@RequestBody Ciudad ciudad) {
+        return ciudadService.crearCiudad(ciudad);
+    }
+
+    @PutMapping("/{id}")
+    public Ciudad actualizarCiudad(@PathVariable Long id, @RequestBody Ciudad ciudad) {
+        return ciudadService.actualizarCiudad(id, ciudad);
     }
 }

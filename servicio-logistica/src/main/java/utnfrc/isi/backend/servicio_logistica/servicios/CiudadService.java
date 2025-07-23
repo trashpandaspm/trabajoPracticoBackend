@@ -20,4 +20,13 @@ public class CiudadService {
         return ciudadRepository.findById(id)
                 .orElseThrow(()-> new RuntimeException("Ciudad no encontrada con ID:" + id));
     }
+
+    public Ciudad crearCiudad(Ciudad ciudad) {
+        return ciudadRepository.save(ciudad);
+    }
+
+    public Ciudad actualizarCiudad(Long id, Ciudad ciudad) {
+        ciudad.setId(id);
+        return ciudadRepository.save(ciudad);
+    }
 }
