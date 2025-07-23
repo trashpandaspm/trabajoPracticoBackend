@@ -1,0 +1,28 @@
+services:
+  keycloak:
+    image: quay.io/keycloak/keycloak:24.0.3
+    container_name: keycloak
+    command: start-dev
+    ports:
+      - "8081:8080"
+    environment:
+      - KEYCLOAK_ADMIN=admin
+      - KEYCLOAK_ADMIN_PASSWORD=admin123
+    volumes:
+      - keycloak_data:/opt/keycloak/data
+  h2-db:
+    image: oscarfonts/h2 # Usamos una imagen específica para H2
+    container_name: h2-db
+    ports:
+      - "8082:81" # Consola web
+      - "9092:1521" # Conexiones TCP
+    volumes:
+      # La imagen busca scripts .sql en esta carpeta para inicializar la BD
+      - ./tpiDb-ddl-create.sql:/docker-entrypoint-initdb.d/init.sql
+      # Carpeta donde se guardarán los datos de la BD
+      - ./data-tpi:/opt/h2-data
+    environment:
+      H2_OPTIONS: -ifNotExists
+
+volumes:
+  keycloak_data:
