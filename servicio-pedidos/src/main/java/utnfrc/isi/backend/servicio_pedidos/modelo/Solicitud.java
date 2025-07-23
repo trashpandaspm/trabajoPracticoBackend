@@ -1,5 +1,6 @@
 package utnfrc.isi.backend.servicio_pedidos.modelo;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.*;
 import lombok.*;
@@ -42,5 +43,6 @@ public class Solicitud {
     private Double tiempoEstimadoHoras;
 
     @OneToMany(mappedBy = "solicitud")
+    @JsonIgnore
     private List<TramoRuta> tramos;
 }

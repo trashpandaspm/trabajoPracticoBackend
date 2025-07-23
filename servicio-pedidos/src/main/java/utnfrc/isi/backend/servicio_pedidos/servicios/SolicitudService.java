@@ -3,6 +3,7 @@ package utnfrc.isi.backend.servicio_pedidos.servicios;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestClient;
+import utnfrc.isi.backend.servicio_pedidos.modelo.Contenedor;
 import utnfrc.isi.backend.servicio_pedidos.modelo.Solicitud;
 import utnfrc.isi.backend.servicio_pedidos.repositorios.SolicitudRepository;
 
@@ -21,7 +22,14 @@ public class SolicitudService {
     private RestClient.Builder restClientBuilder;
 
     public Solicitud crearSolicitud(Solicitud solicitud) {
-        contenedorService.obtenerPorId(solicitud.getContenedor().getId());
+        // 1. Obtener el ID del contenedor que viene en el JSON.
+        Long contenedorId = solicitud.getContenedor().getId();
+
+        // 2. Usar el servicio para obtener la entidad Contenedor COMPLETA desde la BD.
+        Contenedor contenedorCompleto = contenedorService.obtenerPorId(contenedorId);
+
+        // 3. Asignar la entidad completa y gestionada a la solicitud.
+        solicitud.setContenedor(contenedorCompleto);
 
         double distanciaKm = 700.0;
         double tarifaBase = 5000.0;
