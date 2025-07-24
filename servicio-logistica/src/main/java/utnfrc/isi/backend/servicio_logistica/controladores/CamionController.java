@@ -6,6 +6,7 @@ import utnfrc.isi.backend.servicio_logistica.modelos.Camion;
 import utnfrc.isi.backend.servicio_logistica.servicios.CamionService;
 
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/camiones")
@@ -30,5 +31,10 @@ public class CamionController {
     @PutMapping("/{id}")
     public Camion actualizarCamion(@PathVariable Long id, @RequestBody Camion camion) {
         return camionService.actualizarCamion(id, camion);
+    }
+
+    @PatchMapping("/{id}")
+    public Camion actualizarParcialmente(@PathVariable Long id, @RequestBody Map<String, Object> updates) {
+        return camionService.actualizarParcialmente(id, updates);
     }
 }

@@ -5,6 +5,8 @@ import org.springframework.stereotype.Service;
 import utnfrc.isi.backend.servicio_logistica.modelos.Tarifa;
 import utnfrc.isi.backend.servicio_logistica.repositorios.TarifaRepository;
 
+import java.util.Map;
+
 @Service
 public class TarifaService {
     @Autowired
@@ -22,5 +24,22 @@ public class TarifaService {
     public Tarifa actualizarTarifa(Long id, Tarifa tarifa) {
         tarifa.setId(id);
         return tarifaRepository.save(tarifa);
+    }
+
+    public Tarifa actualizarParcialmente(Long id, Map<String, Object> updates) {
+        Tarifa tarifaExistente = tarifaRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Tarifa no encontrada con ID: " + id));
+
+        if (updates.containsKey("montoBase")) {
+            tarifaExistente.setMontoBase((Double) updates.get("montoBase"));
+        }
+        if (updates.containsKey("costoKm")) {
+            tarifaExistente.setCostoKm((Double) updates.get("costoKm"));
+        }
+        if (updates.containsKey("costoDiaDeposito")) {
+            tarifaExistente.setCostoDiaDeposito((Double) updates.get("costoDiaDeposito"));
+        }
+
+        return tarifaRepository.save(tarifaExistente);
     }
 }

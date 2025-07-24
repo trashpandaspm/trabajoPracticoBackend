@@ -6,6 +6,7 @@ import utnfrc.isi.backend.servicio_logistica.modelos.Ciudad;
 import utnfrc.isi.backend.servicio_logistica.servicios.CiudadService;
 
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/ciudades")
@@ -32,5 +33,10 @@ public class CiudadController {
     @PutMapping("/{id}")
     public Ciudad actualizarCiudad(@PathVariable Long id, @RequestBody Ciudad ciudad) {
         return ciudadService.actualizarCiudad(id, ciudad);
+    }
+
+    @PatchMapping("/{id}")
+    public Ciudad actualizarParcialmente(@PathVariable Long id, @RequestBody Map<String, Object> updates) {
+        return ciudadService.actualizarParcialmente(id, updates);
     }
 }

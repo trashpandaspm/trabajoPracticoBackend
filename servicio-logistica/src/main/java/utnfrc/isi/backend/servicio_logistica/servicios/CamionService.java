@@ -6,6 +6,7 @@ import utnfrc.isi.backend.servicio_logistica.modelos.Camion;
 import utnfrc.isi.backend.servicio_logistica.repositorios.CamionRepository;
 
 import java.util.List;
+import java.util.Map;
 
 @Service
 public class CamionService {
@@ -32,5 +33,25 @@ public class CamionService {
     public Camion actualizarCamion(Long id, Camion camion) {
         camion.setId(id);
         return camionRepository.save(camion);
+    }
+
+    public Camion actualizarParcialmente(Long id, Map<String, Object> updates) {
+        Camion camionExistente = camionRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Camión no encontrado con ID: " + id));
+
+
+        if (updates.containsKey("capacidadPeso")) {
+            camionExistente.setCapacidadPeso((Double) updates.get("capacidadPeso"));
+        }
+
+        if (updates.containsKey("capacidadVolumen")) {
+            camionExistente.setCapacidadVolumen((Double) updates.get("capacidadVolumen"));
+        }
+
+        if (updates.containsKey("disponible")) {
+            camionExistente.setDisponible((Boolean) updates.get("disponible"));
+        }
+
+        return camionRepository.save(camionExistente);
     }
 }
