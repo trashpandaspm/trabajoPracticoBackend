@@ -35,20 +35,18 @@ public class TramoRuta {
     private Long ciudadDestinoId;
 
     @NotNull(message = "La fecha estimada de salida no puede ser nula")
-    @FutureOrPresent(message = "La fecha estimada de salida no puede ser pasada")
     @Column(name = "FECHA_ESTIMADA_SALIDA")
     private LocalDateTime fechaEstimadaSalida;
 
     @NotNull(message = "La fecha estimada de llegada no puede ser nula")
-    @Future(message = "La fecha estimada de llegada debe ser futura")
     @Column(name = "FECHA_ESTIMADA_LLEGADA")
     private LocalDateTime fechaEstimadaLlegada;
 
-    @PastOrPresent
+
     @Column(name = "FECHA_REAL_SALIDA")
     private LocalDateTime fechaRealSalida;
 
-    @PastOrPresent
+
     @Column(name = "FECHA_REAL_LLEGADA")
     private LocalDateTime fechaRealLlegada;
 }

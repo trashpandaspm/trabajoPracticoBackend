@@ -30,6 +30,6 @@ public class ContenedorService {
 
     public Contenedor obtenerPorId(Long id){
         return contenedorRepository.findById(id)
-                .orElseThrow(()-> new RuntimeException("Contenedor no encontrado con ID: " + id));
+                .orElseThrow(()-> new ResourceNotFoundException("Contenedor no encontrado con ID: " + id));
     }
 }

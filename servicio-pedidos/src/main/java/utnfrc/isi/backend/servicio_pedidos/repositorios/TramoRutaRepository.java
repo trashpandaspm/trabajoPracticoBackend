@@ -8,4 +8,5 @@ import java.util.List;
 
 public interface TramoRutaRepository extends JpaRepository<TramoRuta, Long> {
     List<TramoRuta> findBySolicitudOrderByOrdenAsc(Solicitud solicitud);
+    List<TramoRuta> findBySolicitudId(Long solicitudId);
 }

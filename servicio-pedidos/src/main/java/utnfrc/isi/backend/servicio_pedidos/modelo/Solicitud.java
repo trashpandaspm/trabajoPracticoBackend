@@ -39,6 +39,8 @@ public class Solicitud {
     @Column(name = "COSTO_ESTIMADO")
     private Double costoEstimado;
 
+    private Double costoFinal;
+
     @Column(name = "TIEMPO_ESTIMADO_HORAS")
     private Double tiempoEstimadoHoras;
 

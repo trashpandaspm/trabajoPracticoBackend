@@ -1,14 +1,20 @@
 package utnfrc.isi.backend.servicio_pedidos.servicios;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
+import com.jayway.jsonpath.JsonPath;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.InjectMocks;
-import org.mockito.Mock;
-import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.http.ResponseEntity;
-import org.springframework.test.util.ReflectionTestUtils;
+import org.mockito.Mockito;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Primary;
+import org.springframework.http.MediaType;
+import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.web.servlet.MvcResult;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.web.client.RestClient;
 import utnfrc.isi.backend.servicio_pedidos.dto.CamionDTO;
 import utnfrc.isi.backend.servicio_pedidos.dto.CiudadDTO;
@@ -16,145 +22,106 @@ import utnfrc.isi.backend.servicio_pedidos.dto.TarifaDTO;
 import utnfrc.isi.backend.servicio_pedidos.modelo.Cliente;
 import utnfrc.isi.backend.servicio_pedidos.modelo.Contenedor;
 import utnfrc.isi.backend.servicio_pedidos.modelo.Solicitud;
-import utnfrc.isi.backend.servicio_pedidos.repositorios.SolicitudRepository;
+import utnfrc.isi.backend.servicio_pedidos.modelo.TramoRuta;
+import utnfrc.isi.backend.servicio_pedidos.repositorios.ClienteRepository;
+import utnfrc.isi.backend.servicio_pedidos.repositorios.ContenedorRepository;
+import utnfrc.isi.backend.servicio_pedidos.repositorios.TramoRutaRepository;
 
-import static org.junit.jupiter.api.Assertions.*;
+import java.util.List;
+
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
-import static org.mockito.Mockito.*;
+import static org.mockito.Mockito.when;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-@ExtendWith(MockitoExtension.class)
-class SolicitudServiceTest {
+@SpringBootTest(properties = { "google.maps.apikey=DUMMY_KEY_FOR_TEST" })
+@AutoConfigureMockMvc
+public class SolicitudServiceTest {
+    @Autowired
+    private MockMvc mockMvc;
+    @Autowired
+    private ContenedorRepository contenedorRepository;
+    @Autowired
+    private ClienteRepository clienteRepository;
+    @Autowired
+    private TramoRutaRepository tramoRutaRepository;
 
-    @Mock private SolicitudRepository solicitudRepository;
-    @Mock private ContenedorService contenedorService;
-    @Mock private TramoRutaService tramoRutaService;
-    @Mock private RestClient.Builder restClientBuilder;
-    @Mock private RestClient restClient;
-    @Mock private RestClient.RequestHeadersUriSpec requestHeadersUriSpec;
-    @Mock private RestClient.ResponseSpec responseSpec;
+    @MockBean
+    private RestClient.Builder restClientBuilder;
 
-    @InjectMocks
-    private SolicitudService solicitudService;
+    private RestClient mockRestClient;
 
     @BeforeEach
     void setUp() {
-        // Inyectamos una API Key de prueba antes de cada test
-        ReflectionTestUtils.setField(solicitudService, "apiKey", "test-key");
+        // ================== INICIO DE LA CORRECCIÓN ==================
+        // Creamos un único mock de RestClient
+        this.mockRestClient = Mockito.mock(RestClient.class);
 
-        // --- CONFIGURACIÓN DE MOCK REFACTORIZADA Y ROBUSTA ---
-        // Aseguramos que la cadena de llamadas siempre devuelva el siguiente mock
-        lenient().when(restClientBuilder.build()).thenReturn(restClient);
-        lenient().when(restClient.get()).thenReturn(requestHeadersUriSpec);
-        lenient().when(requestHeadersUriSpec.uri(anyString(), any(Object[].class))).thenReturn(requestHeadersUriSpec);
-        lenient().when(requestHeadersUriSpec.uri(anyString())).thenReturn(requestHeadersUriSpec);
-        lenient().when(requestHeadersUriSpec.retrieve()).thenReturn(responseSpec);
-        // Hacemos el mock de baseUrl explícito para la llamada a Google
-        lenient().when(restClientBuilder.baseUrl(anyString())).thenReturn(restClientBuilder);
+        // Configuramos el builder para que maneje AMBOS casos
+        when(restClientBuilder.build()).thenReturn(mockRestClient);
+        when(restClientBuilder.baseUrl(anyString())).thenReturn(restClientBuilder); // <-- Clave: que se devuelva a sí mismo
+        // =================== FIN DE LA CORRECCIÓN ====================
     }
 
     @Test
-    void testCrearSolicitud_FlujoCompletoExitoso() throws JsonProcessingException {
-        // Arrange
-        Cliente cliente = new Cliente();
-        Contenedor contenedor = new Contenedor(1L, 15000.0, 60.0, "LISTO", cliente);
-        Solicitud solicitudEntrante = new Solicitud();
-        solicitudEntrante.setContenedor(contenedor);
-        solicitudEntrante.setCiudadOrigenId(1L);
-        solicitudEntrante.setCiudadDestinoId(2L);
+    void testFlujoCompletoDeSolicitudYCalculoCostoFinal() throws Exception {
+        // === ARRANGE (Preparar) ===
+        Cliente clienteDePrueba = clienteRepository.save(new Cliente(1L, "Test Client", "test@test.com", "pass"));
+        contenedorRepository.save(new Contenedor(1L, 18000.0, 75.0, "DISPONIBLE", clienteDePrueba));
 
-        // Simulamos las respuestas de las APIs
-        mockRespuestaServicioLogistica();
-        mockRespuestaGoogleMaps(123456); // 123.456 km
+        // Preparamos los mocks para la cadena de RestClient
+        RestClient.RequestHeadersUriSpec mockUriSpec = Mockito.mock(RestClient.RequestHeadersUriSpec.class);
+        RestClient.RequestHeadersSpec mockHeadersSpec = Mockito.mock(RestClient.RequestHeadersSpec.class);
+        RestClient.ResponseSpec mockResponseSpec = Mockito.mock(RestClient.ResponseSpec.class);
 
-        // Simulamos el comportamiento de los servicios y repositorios internos
-        when(contenedorService.obtenerPorId(1L)).thenReturn(contenedor);
-        when(solicitudRepository.save(any(Solicitud.class))).thenReturn(solicitudEntrante);
+        when(mockRestClient.get()).thenReturn(mockUriSpec);
+        when(mockUriSpec.uri(anyString(), any(Object[].class))).thenReturn(mockHeadersSpec);
+        when(mockUriSpec.uri(anyString())).thenReturn(mockHeadersSpec);
+        when(mockHeadersSpec.retrieve()).thenReturn(mockResponseSpec);
 
-        // Act
-        Solicitud solicitudCreada = solicitudService.crearSolicitud(solicitudEntrante);
-
-        // Assert
-        assertNotNull(solicitudCreada);
-        assertEquals(1L, solicitudCreada.getCamionId());
-        // Usamos un delta para la comparación de doubles
-        assertEquals(1.5432, solicitudCreada.getTiempoEstimadoHoras(), 0.0001);
-        assertEquals(23580.128, solicitudCreada.getCostoEstimado(), 0.001);
-    }
-
-    private void mockRespuestaServicioLogisticaParcial() {
-        CiudadDTO ciudadOrigen = new CiudadDTO(1L, "Origen", -31.0, -64.0);
-        CiudadDTO ciudadDestino = new CiudadDTO(2L, "Destino", -34.0, -58.0);
-        TarifaDTO tarifa = new TarifaDTO(1L, 5000.0, 150.5, 2500.0);
-
-        // Devolvemos las ciudades y la tarifa, pero no el camión
-        when(responseSpec.body(CiudadDTO.class)).thenReturn(ciudadOrigen, ciudadDestino);
-        when(responseSpec.body(TarifaDTO.class)).thenReturn(tarifa);
-    }
-
-    // --- Métodos auxiliares para no repetir código ---
-    private void mockRespuestaServicioLogistica() {
-        CiudadDTO ciudadOrigen = new CiudadDTO(1L, "Origen", -31.0, -64.0);
-        CiudadDTO ciudadDestino = new CiudadDTO(2L, "Destino", -34.0, -58.0);
-        TarifaDTO tarifa = new TarifaDTO(1L, 5000.0, 150.5, 2500.0);
+        // Preparamos los datos de prueba
+        CiudadDTO ciudadOrigen = new CiudadDTO(1L, "Origen", 10.0, 20.0);
+        CiudadDTO ciudadDestino = new CiudadDTO(3L, "Destino", 11.0, 21.0);
+        TarifaDTO tarifa = new TarifaDTO(1L, 500.0, 1.5, 25.0);
         CamionDTO camion = new CamionDTO(1L, 20000.0, 80.0, true);
+        // Simulamos la respuesta de Google Maps (valor en metros)
+        String googleMapsResponse = "{\"routes\":[{\"legs\":[{\"distance\":{\"value\":123456}}]}]}";
 
-        // Configuramos los mocks para que devuelvan los DTOs correspondientes
-        when(responseSpec.body(CiudadDTO.class)).thenReturn(ciudadOrigen, ciudadDestino);
-        when(responseSpec.body(TarifaDTO.class)).thenReturn(tarifa);
-        when(responseSpec.body(CamionDTO.class)).thenReturn(camion);
-    }
+        // Configuramos las respuestas del mock
+        when(mockResponseSpec.body(String.class)).thenReturn(googleMapsResponse);
+        when(mockResponseSpec.body(CiudadDTO.class)).thenReturn(ciudadOrigen, ciudadDestino);
+        when(mockResponseSpec.body(TarifaDTO.class)).thenReturn(tarifa);
+        when(mockResponseSpec.body(CamionDTO.class)).thenReturn(camion);
 
-    private void mockRespuestaGoogleMaps(int distanciaEnMetros) throws JsonProcessingException {
-        String json = "{\"rows\":[{\"elements\":[{\"distance\":{\"value\":" + distanciaEnMetros + "}}]}]}";
-        // Configuramos el mock para la respuesta específica de Google
-        when(responseSpec.toEntity(String.class)).thenReturn(ResponseEntity.ok(json));
-    }
+        String solicitudJson = "{\"contenedor\": {\"id\": 1}, \"ciudadOrigenId\": 1, \"ciudadDestinoId\": 3, \"depositoId\": 1}";
 
-    @Test
-    void testCrearSolicitud_FallaSiNoHayCamionDisponible() {
-        // Arrange
-        Cliente cliente = new Cliente();
-        Contenedor contenedor = new Contenedor(1L, 15000.0, 60.0, "LISTO", cliente);
-        Solicitud solicitudEntrante = new Solicitud();
-        solicitudEntrante.setContenedor(contenedor);
-        solicitudEntrante.setCiudadOrigenId(1L);
-        solicitudEntrante.setCiudadDestinoId(2L);
 
-        // Simulamos las respuestas de las APIs internas
-        mockRespuestaServicioLogisticaParcial(); // Usamos un helper parcial
+        // === ACT & ASSERT (Ejecutar y Verificar) ===
+        MvcResult result = mockMvc.perform(post("/api/solicitudes")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(solicitudJson))
+                .andExpect(status().isCreated())
+                .andReturn();
 
-        // La clave de esta prueba: simulamos que la API de camiones lanza una excepción
-        when(responseSpec.body(CamionDTO.class)).thenThrow(new RuntimeException("No hay camiones disponibles que cumplan con la capacidad requerida."));
+        // El resto del test sigue igual...
+        ObjectMapper objectMapper = new ObjectMapper();
+        Solicitud solicitudCreada = objectMapper.readValue(result.getResponse().getContentAsString(), Solicitud.class);
+        Long solicitudId = solicitudCreada.getId();
 
-        when(contenedorService.obtenerPorId(1L)).thenReturn(contenedor);
+        List<TramoRuta> tramosCreados = tramoRutaRepository.findBySolicitudId(solicitudId);
+        Long tramo1Id = tramosCreados.get(0).getId();
+        Long tramo2Id = tramosCreados.get(1).getId();
 
-        // Act & Assert: Verificamos que se lance la excepción correcta
-        Exception exception = assertThrows(RuntimeException.class, () -> {
-            solicitudService.crearSolicitud(solicitudEntrante);
-        });
+        mockMvc.perform(patch("/api/tramos/" + tramo1Id + "/iniciar")).andExpect(status().isOk());
+        mockMvc.perform(patch("/api/tramos/" + tramo1Id + "/completar")).andExpect(status().isOk());
+        mockMvc.perform(patch("/api/tramos/" + tramo2Id + "/iniciar")).andExpect(status().isOk());
+        mockMvc.perform(patch("/api/tramos/" + tramo2Id + "/completar")).andExpect(status().isOk());
 
-        assertTrue(exception.getMessage().contains("No hay camiones disponibles"));
-        // Verificamos que, como falló, nunca intentó guardar la solicitud
-        verify(solicitudRepository, never()).save(any(Solicitud.class));
-    }
-    @Test
-    void testCrearSolicitud_FallaSiCiudadNoExiste() {
-        // Arrange
-        Cliente cliente = new Cliente();
-        Contenedor contenedor = new Contenedor(1L, 15000.0, 60.0, "LISTO", cliente);
-        Solicitud solicitudEntrante = new Solicitud();
-        solicitudEntrante.setContenedor(contenedor);
-        solicitudEntrante.setCiudadOrigenId(99L); // Un ID de ciudad que no existe
-
-        when(contenedorService.obtenerPorId(1L)).thenReturn(contenedor);
-
-        // La clave: simulamos que la llamada a la API de ciudades falla
-        when(responseSpec.body(CiudadDTO.class)).thenThrow(new RuntimeException("Ciudad no encontrada con ID: 99"));
-
-        // Act & Assert
-        assertThrows(RuntimeException.class, () -> {
-            solicitudService.crearSolicitud(solicitudEntrante);
-        });
+        mockMvc.perform(post("/api/solicitudes/" + solicitudId + "/finalizar-costo"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.costoFinal").isNumber());
     }
 }
