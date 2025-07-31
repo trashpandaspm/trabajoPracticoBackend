@@ -102,6 +102,10 @@ GET http://localhost:9000/api/contenedores/1
 - Peso y volumen del contenedor
 - Estadía en depósito (calculada a partir de la diferencia entre fechas reales de entrada y salida del tramo correspondiente)
 
+crea una nueva solicitud con comandos de la prueba de api
+
+GET http://localhost:9000/api/tramos
+
 PATCH http://localhost:9000/api/tramos/1/iniciar
 
 PATCH http://localhost:9000/api/tramos/1/completar
@@ -121,5 +125,54 @@ POST http://localhost:9000/api/ciudades
     "latitud": -45.8895,
     "longitud": -12.8458
 }
+
+{
+        "nombre": "Rosario",
+        "latitud": -32.9445,
+        "longitud": -60.6505
+      }
 ```
+PATCH http://localhost:9000/api/ciudades/{id}
+```
+{
+        "nombre": "Cordoba Capital",
+        "latitud": -31.4201,
+        "longitud": -64.1888
+      }
+```
+POST http://localhost:9000/api/depositos
+```
+{
+        "ciudad": {
+            "id": 1
+        },
+        "direccion": "Av. Velez Sarsfield 3000",
+        "latitud": -31.4423,
+        "longitud": -64.1932
+      }
+```
+PATCH http://localhost:9000/api/depositos/1
+```
+{
+        "ciudadId": 2,
+        "direccion": "Bv. Oroño 500"
+      }
+```
+POST http://localhost:9000/api/camiones
+```
+{
+        "capacidadPeso": 25000.0,
+        "capacidadVolumen": 90.0,
+        "disponible": true
+      }
+```
+PATCH http://localhost:9000/api/camiones/1
+```
+{
+        "capacidadPeso": 25000.0,
+        "capacidadVolumen": 90.0,
+        "disponible": false
+      }
+```
+
 # 7. Validar que un camión no supere su capacidad máxima en peso ni volumen.
