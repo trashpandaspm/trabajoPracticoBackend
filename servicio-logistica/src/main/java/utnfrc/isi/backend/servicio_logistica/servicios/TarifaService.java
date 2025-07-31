@@ -28,7 +28,7 @@ public class TarifaService {
 
     public Tarifa actualizarParcialmente(Long id, Map<String, Object> updates) {
         Tarifa tarifaExistente = tarifaRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Tarifa no encontrada con ID: " + id));
+                .orElseThrow(() -> new ResourceNotFoundException("Tarifa no encontrada con ID: " + id));
 
         if (updates.containsKey("montoBase")) {
             tarifaExistente.setMontoBase((Double) updates.get("montoBase"));

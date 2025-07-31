@@ -22,4 +22,5 @@ public class Camion {
 
     @Column(name = "DISPONIBLE")
     private Boolean disponible;
+
 }

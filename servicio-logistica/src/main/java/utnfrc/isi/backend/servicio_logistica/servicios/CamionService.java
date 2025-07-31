@@ -37,7 +37,7 @@ public class CamionService {
 
     public Camion actualizarParcialmente(Long id, Map<String, Object> updates) {
         Camion camionExistente = camionRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Camión no encontrado con ID: " + id));
+                .orElseThrow(() -> new ResourceNotFoundException("Camión no encontrado con ID: " + id));
 
 
         if (updates.containsKey("capacidadPeso")) {

@@ -33,7 +33,7 @@ public class CiudadService {
 
     public Ciudad actualizarParcialmente(Long id, Map<String, Object> updates) {
         Ciudad ciudadExistente = ciudadRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Ciudad no encontrada con ID: " + id));
+                .orElseThrow(() -> new ResourceNotFoundException("Ciudad no encontrada con ID: " + id));
 
         if (updates.containsKey("nombre")) {
             ciudadExistente.setNombre((String) updates.get("nombre"));
