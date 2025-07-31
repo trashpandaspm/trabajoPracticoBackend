@@ -52,6 +52,7 @@ CREATE TABLE solicitud (
   deposito_id BIGINT NOT NULL,
   camion_id BIGINT NOT NULL,
   costo_estimado DOUBLE,
+  COSTO_FINAL DOUBLE,
   tiempo_estimado_horas DOUBLE,
   FOREIGN KEY (contenedor_id) REFERENCES contenedor(id),
   FOREIGN KEY (ciudad_origen_id) REFERENCES ciudad(id),
